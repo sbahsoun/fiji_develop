@@ -1,10 +1,22 @@
 //Projection area and perimeter macro for macrophages on whole mount images
 
+//ask user to input range parameters 
+title = "Set File Location";
+  width=1024; height=512;
+  desktop = "filepath"
+
+
+  Dialog.createNonBlocking("filez");
+  Dialog.addMessage("Create a new file on your desktop. Copy the filepath and paste it below. Add a backslash at the end of the path ")
+  Dialog.addString("Macrophage Filepath", desktop);
+  Dialog.show();
+  desktop = Dialog.getString();;
+
 //Open image and obtain image information
 run("Open...");
 getTitle();
 title = getTitle();
-
+saved_title = getTitle(); 
 
 //split channels, close out unneeded ones
 selectWindow(title);
@@ -78,7 +90,14 @@ setThreshold(255, 255);
 run("Set Measurements...", "area center perimeter limit display redirect=None decimal=3");
 run("Analyze Particles...", " show=Outlines display exclude clear summarize add"); 
 run("ROI Manager...");
+run("Measure");
 
+// prompt user to save the results here and then go back w/ the remainder of the program
+selectWindow("Results");
+rename(saved_title); 
+saveAs("Results", desktop + saved_title + "area_and_perimeter.csv");
+//waitForUser("Copy macrophage area and perimeters to your spreadsheet before preceding with analysis! Hit OK when done!"); 
+selectWindow("Results");
 
 selectWindow("max_c4");
 
@@ -98,17 +117,16 @@ waitForUser("Add all macrophages projection area to ROI manager. Press t to add.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //have to duplicate each roi and then select for manual id 
 			roi_count = roiManager("count");
-			print("Number of ROIs");
-			print(roi_count);
-			run("Set Measurements...", "area min centroid center perimeter shape integrated area_fraction limit display redirect=None decimal=3");
+			run("Set Measurements...", "area min centroid center perimeter shape integrated limit display redirect=None decimal=3");
 			for(i=0; i < roi_count; i++) {
+				selectWindow("max_c4");
 				roiManager("Select", i);
 				run("Duplicate...", "duplicate");
-			//	roi_name = Roi.getName;
-			//	selectWindow(roi_name);
-				rename("ROI" + i + 1);
-                selectWindow("ROI" + i + 1);
-				roiManager("Measure"); }
+				saveAs("Tiff", desktop + saved_title + "ROI" + i + ".tif");
+				selectWindow("max_c4");
+				roiManager("Select", i);
+				roiManager("Measure");
+				}
 
 				
 
@@ -121,7 +139,8 @@ waitForUser("Add all macrophages projection area to ROI manager. Press t to add.
 //roiManager("Measure");
 roiManager("Show All with labels");
 roiManager("List");
-selectWindow("Results"); 
+selectWindow("Results");
+saveAs("Results", desktop + saved_title + "projection_area.csv"); 
 
 waitForUser("Analysis is Complete"); 
 
